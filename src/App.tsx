@@ -22,7 +22,7 @@ interface Model {
 
 const init = {
   lastid : 0,
-  counters : []
+  counters : {}
 };
 
 const cmdCountersMap = (id: string) => (action: Counter.ActionsType) => cmdCounter(id, action);
@@ -54,7 +54,7 @@ const Cnt = pure(Counter.view);
 
 
 
-const view = (model : typeof init, dispatch : Dispatch<MessagesType>) => {
+const view = (model : Model, dispatch : Dispatch<MessagesType>) => {
   let v = [];
   for(const p in model.counters) {
     v.push(<li key={p}> <Cnt model = {model.counters[p]} dispatch={Dispatch.map(dispatch, cmdCountersMap(p))}/></li>)
@@ -70,6 +70,6 @@ const view = (model : typeof init, dispatch : Dispatch<MessagesType>) => {
   );
 }
 
-const App = createReactApp([init, Cmd.none], update as any, view);
+const App = createReactApp([init, Cmd.none], update, view);
 
 export default App;
