@@ -88,7 +88,20 @@ export const Cmd = {
 }
 
 export const Dispatch = {
-    map: <M1 extends Action, M2 extends Action>(dispatch: Dispatch<M2>, fn: (m1: M1) => M2) : Dispatch<M1> => {
+    map: <M1 extends Action, M2 extends Action>(dispatch: Dispatch<M2>, fn: (m1: M1) => M2, memoize = true) : Dispatch<M1> => {
+        if(memoize)
+        {
+            var disp = dispatch as any;
+            if(!disp.__memo)
+            {
+                disp.__memo = new Map();
+            }
+            if(!disp.__memo.get(fn))
+            {
+                disp.__memo.set(fn, (m1: M1) => dispatch(fn(m1)));
+            }
+            return disp.__memo.get(fn);
+        }
         return (m1: M1) => dispatch(fn(m1));
     }
 }
