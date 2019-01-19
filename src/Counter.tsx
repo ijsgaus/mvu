@@ -12,7 +12,7 @@ const actions = {
 
 export type ActionsType = ActionType<typeof actions>;
 
-interface State { count: number };
+export interface State { count: number };
 
 export const init = () : State => {
     return { count: 0 };

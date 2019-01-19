@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Action } from "redux";
 import { View, Reaction, Update, Middleware, Dispatch } from './mvu';
+import {} from "typesafe-actions";
 
 type ReactView<TModel, TMsg extends Action> = View<TModel, TMsg, JSX.Element>;
 

@@ -6,43 +6,70 @@ import { createReactApp, pure } from './mvu/react-mvu';
 import * as Counter from './Counter';
 import { createAction, ActionType, getType } from 'typesafe-actions';
 
-const c1 = createAction("C1", r => (a: Counter.ActionsType) => r(a));
-const c2 = createAction("C2", r => (a: Counter.ActionsType) => r(a));
+const addCounter = createAction("ADDCOUNT");
+const cmdCounter = createAction("COUNTER_CMD", r => (id: string, action: Counter.ActionsType) => r({ id, action}));
 
-const ct = {
-  c1, c2
+const message = {
+  addCounter, cmdCounter
 }
 
-type AT = ActionType<typeof ct>;
+type MessagesType = ActionType<typeof message>;
+
+interface Model {
+  lastid: number,
+  counters: { [id:string] :Counter.State },
+}
 
 const init = {
-  C1 : Counter.init(),
-  C2 : Counter.init()
+  lastid : 0,
+  counters : []
 };
 
-const update = (model : typeof init, msg : AT) : Reaction<typeof init, AT> => {
+const cmdCountersMap = (id: string) => (action: Counter.ActionsType) => cmdCounter(id, action);
+
+const update = (model : Model, msg : MessagesType) : Reaction<Model, MessagesType> => {
   switch(msg.type)
   {
-    case getType(c1):
-      const [st1, cmd1] = Counter.update(model.C1, msg.payload)
-      return [{...model, C1 : st1}, Cmd.map(cmd1, c1) ]
-    case getType(c2):
-      const [st, cmd] = Counter.update(model.C2, msg.payload)
-      return [{...model, C2 : st}, Cmd.map(cmd, c2) ]
+    case getType(addCounter):
+      return [
+        { 
+          lastid: model.lastid + 1,
+          counters: {...model.counters, [`${model.lastid}`] : Counter.init() }
+        },
+        Cmd.none
+      ];
+      
+      case getType(cmdCounter):
+        const cnt = model.counters[msg.payload.id];
+        let [newCnt, cmd] = Counter.update(cnt, msg.payload.action);
+        return [{lastid : model.lastid, counters : { ...model.counters, [msg.payload.id] : newCnt }}, 
+          Cmd.map(cmd, cmdCountersMap(msg.payload.id)) ]
+
+      default:
+          throw new Error();
   }
 }
 
 const Cnt = pure(Counter.view);
 
-const view = (model : typeof init, dispatch : Dispatch<AT>) => {
+
+
+const view = (model : typeof init, dispatch : Dispatch<MessagesType>) => {
+  let v = [];
+  for(const p in model.counters) {
+    v.push(<li key={p}> <Cnt model = {model.counters[p]} dispatch={Dispatch.map(dispatch, cmdCountersMap(p))}/></li>)
+  };
+
   return (
     <div>
-    <Cnt model={model.C1} dispatch={Dispatch.map(dispatch, c1)} /> 
-    <Cnt model={model.C2} dispatch={Dispatch.map(dispatch, c2)} /> 
+      <ul>
+        {v}
+      </ul>
+      <button type="submit" onClick={() => dispatch(addCounter())}>Add</button>
     </div>
   );
 }
 
-const App = createReactApp([init, Cmd.none], update, view);
+const App = createReactApp([init, Cmd.none], update as any, view);
 
 export default App;
