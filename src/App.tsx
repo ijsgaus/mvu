@@ -2,22 +2,21 @@ import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { Cmd, Dispatch, Reaction } from './mvu/mvu';
-import { createReactApp, pure } from './mvu/react-mvu';
-import * as Counter from './Counter';
+import { createReactApp } from './mvu/react-mvu';
+import { createDevReactApp, withDevTools, useDevTools } from './mvu/mvu-devtools';
+import Counter, { Messages as CounterMessages, Model as CounterModel  } from './Counter';
 import { createAction, ActionType, getType } from 'typesafe-actions';
 
-const addCounter = createAction("ADDCOUNT");
-const cmdCounter = createAction("COUNTER_CMD", r => (id: string, action: Counter.ActionsType) => r({ id, action}));
-
-const message = {
-  addCounter, cmdCounter
+const messages = {
+  addCounter : createAction("ADDCOUNT"), 
+  cmdCounter : createAction("COUNTER_CMD", r => (id: string, action: CounterMessages) => r({ id, action}))
 }
 
-type MessagesType = ActionType<typeof message>;
+type MessagesType = ActionType<typeof messages>;
 
 interface Model {
   lastid: number,
-  counters: { [id:string] :Counter.State },
+  counters: { [id:string] :CounterModel },
 }
 
 const init = {
@@ -25,21 +24,21 @@ const init = {
   counters : {}
 };
 
-const cmdCountersMap = (id: string) => (action: Counter.ActionsType) => cmdCounter(id, action);
+const cmdCountersMap = (id: string) => (action: CounterMessages) => messages.cmdCounter(id, action);
 
 const update = (model : Model, msg : MessagesType) : Reaction<Model, MessagesType> => {
   switch(msg.type)
   {
-    case getType(addCounter):
+    case getType(messages.addCounter):
       return [
         { 
           lastid: model.lastid + 1,
-          counters: {...model.counters, [`${model.lastid}`] : Counter.init() }
+          counters: {...model.counters, [`${model.lastid}`] : Counter.init }
         },
         Cmd.none
       ];
       
-      case getType(cmdCounter):
+      case getType(messages.cmdCounter):
         const cnt = model.counters[msg.payload.id];
         let [newCnt, cmd] = Counter.update(cnt, msg.payload.action);
         return [{lastid : model.lastid, counters : { ...model.counters, [msg.payload.id] : newCnt }}, 
@@ -50,14 +49,10 @@ const update = (model : Model, msg : MessagesType) : Reaction<Model, MessagesTyp
   }
 }
 
-const Cnt = pure(Counter.view);
-
-
-
 const view = (model : Model, dispatch : Dispatch<MessagesType>) => {
   let v = [];
   for(const p in model.counters) {
-    v.push(<li key={p}> <Cnt model = {model.counters[p]} dispatch={Dispatch.map(dispatch, cmdCountersMap(p))}/></li>)
+    v.push(<li key={p}> <Counter.view model = {model.counters[p]} dispatch={Dispatch.map(dispatch, cmdCountersMap(p))}/></li>)
   };
 
   return (
@@ -65,11 +60,11 @@ const view = (model : Model, dispatch : Dispatch<MessagesType>) => {
       <ul>
         {v}
       </ul>
-      <button type="submit" onClick={() => dispatch(addCounter())}>Add</button>
+      <button type="submit" onClick={() => dispatch(messages.addCounter())}>Add</button>
     </div>
   );
 }
 
-const App = createReactApp([init, Cmd.none], update, view);
+const App = useDevTools(createReactApp([init, Cmd.none], update, view));
 
 export default App;

@@ -1,21 +1,20 @@
 import * as React from 'react';
 import { Dispatch, Cmd, Reaction } from './mvu/mvu';
 import { createAction, ActionType, getType } from 'typesafe-actions';
+import { pure } from './mvu/react-mvu';
 
-
-const increment = createAction('INCREMENT'); 
-const decrement = createAction('DECREMENT');
-const actions = {
-    increment,
-    decrement
+const messages = {
+    increment : createAction('INCREMENT') ,
+    decrement : createAction('DECREMENT'),
+    clear: createAction('CLEAR')
 };
 
-export type ActionsType = ActionType<typeof actions>;
+export type Messages = ActionType<typeof messages>;
 
-export interface State { count: number };
+export interface Model { count: number };
 
-export const init = () : State => {
-    return { count: 0 };
+const init = {
+   count: 0 
 };
 
 const inc = async () => {
@@ -25,30 +24,39 @@ const inc = async () => {
     console.log("IN ASYNC");
     await ts(2000);
     console.log("AFTER ASYNC");
-    return decrement();
+    return messages.decrement();
 }
 
-export const update = (state: State, msg: ActionsType) : Reaction<State, ActionsType>  => {
+const update = (state: Model, msg: Messages) : Reaction<Model, Messages>  => {
     switch(msg.type)
     {
-        case getType(increment): 
+        case getType(messages.increment): 
             console.log(`UPDATE: INCREMENT`);
             return [{ count: state.count + 1 }, Cmd.ofPromise(inc())];
-        case getType(decrement): 
+        case getType(messages.decrement): 
             console.log(`UPDATE: DECREMENT`);
             return [{ count: state.count - 1 }, Cmd.none];
+        case getType(messages.clear):
+            return [{count: 100 }, Cmd.none]
         default:
             throw new Error("unknown message type"); 
     };
 };
 
-export const view = (state: State, dispatch: Dispatch<ActionsType>) => {
+const view = (state: Model, dispatch: Dispatch<Messages>) => {
     return (
         <div>
-            <button onClick = {() => dispatch(increment())}>+</button>
+            <button onClick = {() => dispatch(messages.increment())}>+</button>
             <span>{state.count}</span>
-            <button onClick = {() => dispatch(decrement())}>-</button>
+            <button onClick = {() => dispatch(messages.decrement())}>-</button>
+            <button onClick = {() => dispatch(messages.clear())}>!</button>
         </div>
     );
 };
 
+export default {
+    messages: messages,
+    init: init,
+    update : update,
+    view: pure(view)
+};

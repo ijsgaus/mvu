@@ -15,17 +15,17 @@ export type Update<TModel, TMsg extends Action> =
 export type View<TModel, TMsg extends Action, TComponent> =
     (model: TModel, dispatch: Dispatch<TMsg>) => TComponent;
 
-export type Middleware<TModel, TMsg extends Action> =
-    (update: Update<TModel, TMsg>) => Update<TModel, TMsg>;
+export interface Middleware<TModel, TMsg extends Action> {
+    connectUpdate: (update: Update<TModel, TMsg>) => Update<TModel, TMsg>;
+    
+}
 
 export const Cmd = {
     ofPromise: <TMsg extends Action>(promise: Promise<TMsg>): Commands<TMsg> => {
         return [{
             execute: async (dispatch: Dispatch<TMsg>) => {
                 try {
-                    console.log("BEFORE PROMISE");
                     const msg = await promise;
-                    console.log(`AFTER PROMISE: ${JSON.stringify(msg)}`);
                     dispatch(msg);
                 }
                 catch (e) {
