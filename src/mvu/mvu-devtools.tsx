@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { } from 'redux-devtools-extension';
 
 export const withDevTools = (typeof window !== 'undefined' && (window as any).__REDUX_DEVTOOLS_EXTENSION__);
 
